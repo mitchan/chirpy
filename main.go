@@ -20,7 +20,7 @@ func (cfg *apiConfig) metricsMiddleware(next http.Handler) http.Handler {
 func (cfg *apiConfig) handlerMetrics(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(fmt.Sprintf("Hits: %d", cfg.fileserverHits.Load())))
+	w.Write(fmt.Appendf([]byte("Hits: "), "%d", cfg.fileserverHits.Load()))
 }
 
 func (cfg *apiConfig) handlerReset(w http.ResponseWriter, r *http.Request) {
@@ -38,13 +38,15 @@ func main() {
 
 	mux.Handle("/app/", apiCfg.metricsMiddleware(http.StripPrefix("/app", http.FileServer(http.Dir(".")))))
 	mux.Handle("/app/assets", http.StripPrefix("/app/assets", http.FileServer(http.Dir("./assets"))))
-	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+
+	// API
+	mux.HandleFunc("POST /api/reset", apiCfg.handlerReset)
+	mux.HandleFunc("GET /api/metrics", apiCfg.handlerMetrics)
+	mux.HandleFunc("GET /api/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "text/plain; charset=utf-8")
 		w.WriteHeader(200)
 		w.Write([]byte("OK"))
 	})
-	mux.HandleFunc("/metrics", apiCfg.handlerMetrics)
-	mux.HandleFunc("/reset", apiCfg.handlerReset)
 
 	server := http.Server{
 		Addr:    ":8080",
