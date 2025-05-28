@@ -26,6 +26,7 @@ func main() {
 		w.WriteHeader(200)
 		w.Write([]byte("OK"))
 	})
+	mux.HandleFunc("POST /api/validate_chirp", apiCfg.validateChirp)
 
 	// ADMIN
 	mux.HandleFunc("GET /admin/metrics", apiCfg.handlerMetrics)
